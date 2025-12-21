@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Scanner from './Scanner'; // Yeni oluşturduğumuz yüksek çözünürlüklü scanner
 
-// Apps Script Linkin
+// Apps Script Linkin (Buraya en son aldığın güncel Deploy URL'sini yapıştır!)
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx................/exec";
 
 const BarcodeScanner: React.FC = () => {
@@ -26,7 +26,11 @@ const BarcodeScanner: React.FC = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ barcode: decodedText }),
+        // --- KRİTİK DÜZELTME: action eklendi ---
+        body: JSON.stringify({ 
+          barcode: decodedText,
+          action: "scanBarcode" // Apps Script'teki Senaryo 2'yi tetikler
+        }),
       });
 
       setStatusMessage("Başarıyla kaydedildi: " + decodedText);
