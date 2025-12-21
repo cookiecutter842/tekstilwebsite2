@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { Html5QrcodeScanner, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 
-// --- BURAYA KENDİ APPS SCRIPT LİNKİNİ YAPIŞTIR ---
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/library/d/16h0HKPn0aM-kG_EgX0lqnm4IOnf5oyBK6MJSsZeHmA5pZ9eaTAKRIoiz/4"; 
+// --- APPS SCRIPT LİNKİNİ UNUTMA ---
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx................/exec"; 
 
 const BarcodeScanner = () => {
   const [scanResult, setScanResult] = useState<string | null>(null);
@@ -10,111 +10,85 @@ const BarcodeScanner = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
-    // Tarayıcı ayarları
+    // Okuyucunun tanıması gereken formatları belirliyoruz
+    const formatsToSupport = [
+      Html5QrcodeSupportedFormats.EAN_13, // Türkiye'deki standart ürünler (869...)
+      Html5QrcodeSupportedFormats.EAN_8,
+      Html5QrcodeSupportedFormats.CODE_128, // Kargo/Lojistik barkodları
+      Html5QrcodeSupportedFormats.CODE_39,
+      Html5QrcodeSupportedFormats.UPC_A,
+      Html5QrcodeSupportedFormats.UPC_E,
+      Html5QrcodeSupportedFormats.QR_CODE,
+    ];
+
     const scanner = new Html5QrcodeScanner(
       "reader",
       { 
         fps: 10, 
-        qrbox: { width: 250, height: 250 },
-        rememberLastUsedCamera: true
+        // Barkodlar yatay olduğu için kutuyu dikdörtgen yaptık
+        qrbox: { width: 250, height: 150 }, 
+        rememberLastUsedCamera: true,
+        formatsToSupport: formatsToSupport, // Formatları buraya ekledik
+        aspectRatio: 1.0, 
       },
       false
     );
 
-    // Başarılı okuma fonksiyonu
     const onScanSuccess = (decodedText: string) => {
-      // Eğer şu an zaten işlem yapılıyorsa tekrar okuma
       if (isProcessing) return;
-
-      scanner.clear(); // Kamerayı durdur
+      scanner.clear(); 
       setScanResult(decodedText);
       handleStockUpdate(decodedText);
     };
 
-    // Hata fonksiyonu (Sessiz kalabilir)
     const onScanFailure = (error: any) => {
-      // console.warn(error);
+      // console.warn(error); 
     };
 
-    // Tarayıcıyı başlat
     scanner.render(onScanSuccess, onScanFailure);
 
-    // Temizlik (Component kapanırsa kamerayı kapat)
     return () => {
-      scanner.clear().catch(error => console.error("Kamera kapatılamadı", error));
+      scanner.clear().catch(error => console.error("Temizleme hatası", error));
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Sadece sayfa ilk açıldığında çalışır
+  }, []); 
 
-  // --- STOK GÜNCELLEME İŞLEMİ ---
+  // --- STOK GÜNCELLEME ---
   const handleStockUpdate = (barcode: string) => {
     setIsProcessing(true);
-    setStatusMessage("⏳ Veritabanında aranıyor ve stok düşülüyor...");
+    setStatusMessage("⏳ Veritabanında aranıyor...");
 
-    // Google Apps Script'e istek at
     fetch(GOOGLE_SCRIPT_URL, {
       method: "POST",
-      mode: "no-cors", // Google güvenlik politikası gereği
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        action: "scanBarcode",
-        barcode: barcode
-      })
+      mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "scanBarcode", barcode: barcode })
     })
     .then(() => {
-      // no-cors modunda cevap okunamaz ama işlem başarılı varsayılır
-      setStatusMessage(`✅ BAŞARILI! Barkod: ${barcode} için stok düşüldü.`);
-      
-      // 3 saniye sonra ekranı yenile (stoğu güncel görmek için)
-      setTimeout(() => {
-        window.location.reload();
-      }, 3000);
+      setStatusMessage(`✅ İşlem İletildi! Barkod: ${barcode}`);
+      setTimeout(() => window.location.reload(), 3000);
     })
     .catch(err => {
       console.error(err);
-      setStatusMessage("❌ HATA: Sunucuyla iletişim kurulamadı.");
+      setStatusMessage("❌ Bağlantı Hatası");
       setIsProcessing(false);
     });
   };
 
   return (
     <div style={{ textAlign: 'center', width: '100%' }}>
-      
-      {/* Sonuç Alanı */}
       {scanResult ? (
-        <div style={{ 
-          padding: '20px', 
-          backgroundColor: statusMessage.includes("HATA") ? '#f8d7da' : '#d4edda',
-          color: statusMessage.includes("HATA") ? '#721c24' : '#155724',
-          borderRadius: '8px',
-          marginTop: '10px'
-        }}>
+        <div style={{ padding: '20px', background: '#d4edda', color: '#155724', borderRadius: '8px' }}>
           <h3>{statusMessage}</h3>
-          <p>Barkod: <strong>{scanResult}</strong></p>
-          
-          <button 
-            onClick={() => window.location.reload()} 
-            style={{
-              marginTop: '15px',
-              padding: '10px 20px',
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '5px',
-              cursor: 'pointer'
-            }}
-          >
-            Yeni Tarama Yap
-          </button>
+          <p>Okunan: <strong>{scanResult}</strong></p>
+          <button onClick={() => window.location.reload()} style={{marginTop:'15px', padding:'10px', cursor:'pointer'}}>Yeni Tara</button>
         </div>
       ) : (
-        // Kamera Alanı
         <div>
           <div id="reader" style={{ width: '100%', minHeight: '300px' }}></div>
           <p style={{fontSize: '12px', color: '#666', marginTop: '10px'}}>
-            Kamera açılmıyorsa tarayıcı izinlerini kontrol edin.
+            Kamerayı barkoda yaklaştırıp sabit tutun.<br/>
+            (Çizgili ve Kare kodları okur)
           </p>
         </div>
       )}
