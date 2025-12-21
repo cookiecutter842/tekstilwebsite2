@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/tekstilwebsite2/static/css/main.64f635db.css",
+    "main.js": "/tekstilwebsite2/static/js/main.0ed172e6.js",
+    "index.html": "/tekstilwebsite2/index.html",
+    "main.64f635db.css.map": "/tekstilwebsite2/static/css/main.64f635db.css.map",
+    "main.0ed172e6.js.map": "/tekstilwebsite2/static/js/main.0ed172e6.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.64f635db.css",
+    "static/js/main.0ed172e6.js"
+  ]
+}
