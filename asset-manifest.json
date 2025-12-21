@@ -1,13 +1,11 @@
 {
   "files": {
-    "main.css": "/tekstilwebsite2/static/css/main.64f635db.css",
-    "main.js": "/tekstilwebsite2/static/js/main.0ed172e6.js",
-    "index.html": "/tekstilwebsite2/index.html",
-    "main.64f635db.css.map": "/tekstilwebsite2/static/css/main.64f635db.css.map",
-    "main.0ed172e6.js.map": "/tekstilwebsite2/static/js/main.0ed172e6.js.map"
+    "main.css": "/tekstilwebsite2/static/css/main.24bb7e09.css",
+    "main.js": "/tekstilwebsite2/static/js/main.650e5b3b.js",
+    "index.html": "/tekstilwebsite2/index.html"
   },
   "entrypoints": [
-    "static/css/main.64f635db.css",
-    "static/js/main.0ed172e6.js"
+    "static/css/main.24bb7e09.css",
+    "static/js/main.650e5b3b.js"
   ]
 }
