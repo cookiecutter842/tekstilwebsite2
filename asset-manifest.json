@@ -1,11 +1,11 @@
 {
   "files": {
     "main.css": "/tekstilwebsite2/static/css/main.24bb7e09.css",
-    "main.js": "/tekstilwebsite2/static/js/main.028e9af0.js",
+    "main.js": "/tekstilwebsite2/static/js/main.b8711590.js",
     "index.html": "/tekstilwebsite2/index.html"
   },
   "entrypoints": [
     "static/css/main.24bb7e09.css",
-    "static/js/main.028e9af0.js"
+    "static/js/main.b8711590.js"
   ]
 }
