@@ -6,10 +6,8 @@ interface ScannerProps {
   onScanSuccess: (result: string) => void;
 }
 
-// BİLEŞEN BAŞLANGICI
 const Scanner: React.FC<ScannerProps> = ({ onScanSuccess }) => {
-  
-  // Hook mutlaka burada, yani fonksiyonun İÇİNDE çağrılmalıdır:
+
   const { ref } = useZxing({
     onDecodeResult(result) {
       onScanSuccess(result.getText());
@@ -27,12 +25,13 @@ const Scanner: React.FC<ScannerProps> = ({ onScanSuccess }) => {
 
   return (
     <div style={{ width: '100%', position: 'relative' }}>
-      <video 
-        ref={ref} 
-        style={{ width: '100%', height: 'auto', borderRadius: '8px' }} 
+      <video
+        // Hata buradaydı, 'as any' ile TypeScript'i ikna ediyoruz
+        ref={ref as any}
+        style={{ width: '100%', height: 'auto', borderRadius: '8px' }}
       />
     </div>
   );
 };
 
-export default Scanner; // BİLEŞEN BİTİŞİ
+export default Scanner;
