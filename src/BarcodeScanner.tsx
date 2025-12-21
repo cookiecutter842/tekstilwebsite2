@@ -1,115 +1,115 @@
-import React, { useEffect, useState } from 'react';
-import { Html5QrcodeScanner, Html5QrcodeSupportedFormats } from 'html5-qrcode';
+import React, { useState } from 'react';
+import Scanner from './Scanner'; // Yeni oluşturduğumuz yüksek çözünürlüklü scanner
 
-// Apps Script Linkin (Burayı kontrol etmeyi unutma!)
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx................/exec"; 
+// Apps Script Linkin
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx................/exec";
 
-const BarcodeScanner = () => {
+const BarcodeScanner: React.FC = () => {
   const [scanResult, setScanResult] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState(false);
 
-  useEffect(() => {
-    // Desteklenen formatlar
-    const formatsToSupport = [
-      Html5QrcodeSupportedFormats.EAN_13,
-      Html5QrcodeSupportedFormats.EAN_8,
-      Html5QrcodeSupportedFormats.CODE_128,
-      Html5QrcodeSupportedFormats.CODE_39,
-      Html5QrcodeSupportedFormats.UPC_A,
-      Html5QrcodeSupportedFormats.UPC_E,
-      Html5QrcodeSupportedFormats.QR_CODE,
-    ];
+  // Barkod okunduğunda çalışan fonksiyon
+  const handleScanSuccess = async (decodedText: string) => {
+    // Eğer şu an bir işlem yapılıyorsa veya aynı barkod zaten okunduysa durdur
+    if (isProcessing || decodedText === scanResult) return;
 
-    const scanner = new Html5QrcodeScanner(
-      "reader",
-      { 
-        fps: 10, 
-        qrbox: { width: 300, height: 150 }, 
-        aspectRatio: 1.0,
-        experimentalFeatures: {
-          useBarCodeDetectorIfSupported: true
-        },
-        // --- GÜNCELLENMİŞ KAMERA AYARLARI ---
-        videoConstraints: {
-          // 'exact' yerine string kullanımı daha güvenlidir, hata vermez
-          facingMode: "environment", 
-          width: { min: 640, ideal: 1280, max: 1920 },
-          height: { min: 480, ideal: 720, max: 1080 },
-          // focusMode satırını TypeScript kızdığı için kaldırdık. 
-          // Modern telefonlar zaten otomatik odaklama yapar.
-        },
-        formatsToSupport: formatsToSupport,
-      },
-      false
-    );
-
-    const onScanSuccess = (decodedText: string) => {
-      if (isProcessing) return;
-      
-      // Hatalı/kısa okumaları elemek için basit bir filtre
-      if (decodedText.length > 3) {
-          scanner.clear(); 
-          setScanResult(decodedText);
-          handleStockUpdate(decodedText);
-      }
-    };
-
-    const onScanFailure = (error: any) => {
-      // Hataları sessizce geç
-    };
-
-    scanner.render(onScanSuccess, onScanFailure);
-
-    return () => {
-      scanner.clear().catch(e => console.error("Kamera kapatma hatası", e));
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); 
-
-  const handleStockUpdate = (barcode: string) => {
+    setScanResult(decodedText);
     setIsProcessing(true);
-    setStatusMessage("⏳ Veritabanında aranıyor...");
+    setStatusMessage("Veri gönderiliyor...");
 
-    fetch(GOOGLE_SCRIPT_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "scanBarcode", barcode: barcode })
-    })
-    .then(() => {
-      setStatusMessage(`✅ İşlem Başarılı! Barkod: ${barcode}`);
-      setTimeout(() => window.location.reload(), 2500);
-    })
-    .catch(err => {
-      console.error(err);
-      setStatusMessage("❌ Bağlantı Hatası");
+    try {
+      // Google Apps Script'e veriyi gönderiyoruz
+      const response = await fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors", // CORS hatası almamak için
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ barcode: decodedText }),
+      });
+
+      setStatusMessage("Başarıyla kaydedildi: " + decodedText);
+      
+      // 3 saniye sonra yeni barkod okumaya hazır hale getir
+      setTimeout(() => {
+        setIsProcessing(false);
+        setScanResult(null);
+        setStatusMessage("Yeni barkod için hazır.");
+      }, 3000);
+
+    } catch (error) {
+      console.error("Hata:", error);
+      setStatusMessage("Gönderim hatası oluştu!");
       setIsProcessing(false);
-    });
+    }
   };
 
   return (
-    <div style={{ textAlign: 'center', width: '100%' }}>
-      {scanResult ? (
-        <div style={{ padding: '20px', background: '#d4edda', color: '#155724', borderRadius: '8px' }}>
-          <h3>{statusMessage}</h3>
-          <p>Okunan: <strong>{scanResult}</strong></p>
-          <button onClick={() => window.location.reload()} style={{marginTop:'15px', padding:'10px'}}>Yeni Tara</button>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px', fontFamily: 'sans-serif' }}>
+      <h2 style={{ color: '#333' }}>Stok Barkod Sistemi</h2>
+
+      {/* Kamera Alanı */}
+      <div style={{ 
+        width: '100%', 
+        maxWidth: '450px', 
+        border: '4px solid #333', 
+        borderRadius: '15px', 
+        overflow: 'hidden',
+        position: 'relative',
+        boxShadow: '0 10px 20px rgba(0,0,0,0.2)'
+      }}>
+        <Scanner onScanSuccess={handleScanSuccess} />
+        
+        {/* Görsel Odak Noktası */}
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: '70%',
+          height: '100px',
+          border: '2px solid rgba(0, 255, 0, 0.6)',
+          borderRadius: '10px',
+          pointerEvents: 'none'
+        }} />
+      </div>
+
+      {/* Durum ve Sonuç Bilgisi */}
+      <div style={{ marginTop: '20px', textAlign: 'center', width: '100%', maxWidth: '450px' }}>
+        <div style={{
+          padding: '15px',
+          borderRadius: '8px',
+          backgroundColor: isProcessing ? '#fff3cd' : '#d4edda',
+          color: isProcessing ? '#856404' : '#155724',
+          border: '1px solid',
+          borderColor: isProcessing ? '#ffeeba' : '#c3e6cb',
+          fontWeight: 'bold'
+        }}>
+          {statusMessage || "Barkodu çerçeveye ortalayın"}
         </div>
-      ) : (
-        <div>
-          <div id="reader" style={{ width: '100%', minHeight: '300px' }}></div>
-          <p style={{fontSize: '14px', color: '#333', marginTop: '10px', fontWeight: 'bold'}}>
-            İPUÇLARI:
-          </p>
-          <ul style={{textAlign: 'left', fontSize: '13px', color: '#555', display: 'inline-block'}}>
-            <li>📏 Kamerayı barkoda <strong>çok yaklaştırma</strong> (15-20cm uzak tut).</li>
-            <li>💡 Işık yeterli olsun.</li>
-            <li>📱 Telefonu yan çevirmeyi dene.</li>
-          </ul>
-        </div>
-      )
-      }
+
+        {scanResult && (
+          <div style={{ marginTop: '10px', fontSize: '18px' }}>
+            Son Okunan: <strong>{scanResult}</strong>
+          </div>
+        )}
+      </div>
+
+      <button 
+        onClick={() => { setScanResult(null); setStatusMessage(""); }}
+        style={{
+          marginTop: '20px',
+          padding: '10px 25px',
+          backgroundColor: '#007bff',
+          color: 'white',
+          border: 'none',
+          borderRadius: '5px',
+          cursor: 'pointer'
+        }}
+      >
+        Yeniden Tara
+      </button>
     </div>
   );
 };
