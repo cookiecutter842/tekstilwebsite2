@@ -1,20 +1,29 @@
 import React, { useState, useMemo } from 'react';
 import './App.css';
+import BarcodeScanner from './BarcodeScanner'; // Daha önce oluşturduğumuz Barkod Okuyucu bileşeni
 
-// --- TİP TANIMLARI ---
+// ==========================================
+// 1. TİP TANIMLARI (TYPESCRIPT INTERFACES)
+// ==========================================
+// Veritabanından gelen veya oluşturduğumuz ürünlerin
+// hangi özelliklere sahip olacağını burada belirtiyoruz.
 interface Product {
   id: number;
-  category: 'Boxer' | 'Atlet' | 'Termal' | 'Tayt' | 'Diğer'; // Kategori eklendi
+  category: 'Boxer' | 'Atlet' | 'Termal' | 'Tayt' | 'Diğer'; // Sadece bu değerleri alabilir
   name: string;
   code: string;
   colors: string;
   sizes: string;
   stock: number;
   price: number;
-  icon: string;
+  icon: string; // FontAwesome ikon sınıfı (örn: 'fa-box-open')
 }
 
-// --- VERİTABANI (BAŞLANGIÇ VERİLERİ) ---
+// ==========================================
+// 2. BAŞLANGIÇ VERİLERİ (MOCK DATA)
+// ==========================================
+// Google Sheets'ten veri gelene kadar ekran boş kalmasın diye
+// kullandığımız varsayılan ürün listesi.
 const initialData: Product[] = [
   // BOXER GRUBU
   { id: 1, category: 'Boxer', name: "ERKEK EMPİRME BOXER", code: "1100", colors: "Tek Renk", sizes: "S-XXL", stock: 150, price: 150, icon: "fa-box-open" },
@@ -53,35 +62,53 @@ const initialData: Product[] = [
   { id: 34, category: 'Tayt', name: "BAYAN KIŞLIK TAYT", code: "2199", colors: "Siyah, Gri", sizes: "S-XXL", stock: 5, price: 250, icon: "fa-snowflake" }
 ];
 
+// ==========================================
+// 3. ANA UYGULAMA BİLEŞENİ
+// ==========================================
 function App() {
+  // --- STATE (DURUM) YÖNETİMİ ---
+  // products: Tüm ürünlerin listesini tutar
   const [products, setProducts] = useState<Product[]>(initialData);
+  
+  // searchTerm: Arama kutusuna yazılan metni tutar
   const [searchTerm, setSearchTerm] = useState("");
+  
+  // selectedCategory: Seçili olan kategori butonunu tutar
   const [selectedCategory, setSelectedCategory] = useState("Tümü");
 
-  // --- STOK GÜNCELLEME ---
+  // showScanner: Barkod tarayıcının açık olup olmadığını kontrol eder (YENİ EKLENDİ)
+  const [showScanner, setShowScanner] = useState(false);
+
+  // --- STOK GÜNCELLEME FONKSİYONU ---
+  // + ve - butonlarına basıldığında çalışır
   const updateStock = (id: number, amount: number) => {
     setProducts(prev => prev.map(p => 
       p.id === id ? { ...p, stock: Math.max(0, p.stock + amount) } : p
     ));
   };
 
-  // --- FİLTRELEME MANTIĞI ---
+  // --- FİLTRELEME MANTIĞI (PERFORMANS İÇİN USEMEMO) ---
+  // Her klavye tuşuna basıldığında tüm listeyi baştan hesaplamak yerine
+  // sadece arama terimi veya kategori değiştiğinde hesaplar.
   const filteredProducts = useMemo(() => {
     return products.filter(product => {
       // 1. Kategori Filtresi
       const categoryMatch = selectedCategory === "Tümü" || product.category === selectedCategory;
-      // 2. Arama Filtresi (İsim veya Kod)
+      
+      // 2. Arama Filtresi (Türkçe karakter duyarlı küçük harf dönüşümü)
       const searchLower = searchTerm.toLocaleLowerCase('tr');
       const nameMatch = product.name.toLocaleLowerCase('tr').includes(searchLower);
       const codeMatch = product.code.toLowerCase().includes(searchLower);
       
+      // Her iki şartı da sağlıyorsa ürünü göster
       return categoryMatch && (nameMatch || codeMatch);
     });
   }, [products, searchTerm, selectedCategory]);
 
   return (
     <div className="App">
-      {/* SOL MENÜ */}
+      
+      {/* === SOL MENÜ (SIDEBAR) === */}
       <nav className="sidebar">
         <div className="sidebar-header">
           <i className="fa-solid fa-boxes-stacked"></i> Stok v2.0
@@ -90,18 +117,43 @@ function App() {
           <li className="active"><i className="fa-solid fa-table-columns"></i> Panel</li>
           <li><i className="fa-solid fa-list"></i> Ürünler</li>
           <li><i className="fa-solid fa-chart-pie"></i> Raporlar</li>
+          {/* Barkod Butonu (Sidebar'a da eklenebilir) */}
+          <li onClick={() => setShowScanner(!showScanner)} style={{cursor: 'pointer', color: '#e74c3c'}}>
+             <i className="fa-solid fa-qrcode"></i> {showScanner ? "Kamerayı Kapat" : "Barkod Okut"}
+          </li>
         </ul>
       </nav>
 
-      {/* ANA İÇERİK */}
+      {/* === ANA İÇERİK (MAIN CONTENT) === */}
       <div className="main-content">
+        
+        {/* --- ÜST BİLGİ ALANI (HEADER) --- */}
         <header>
           <div className="header-title"><h2>Ürün Yönetimi</h2></div>
-          <div className="user-info"><span>Admin</span><i className="fa-solid fa-circle-user fa-xl"></i></div>
+          <div className="user-info">
+             {/* Sağ üstte hızlı barkod butonu */}
+             <button 
+                onClick={() => setShowScanner(!showScanner)} 
+                className="btn-stock" 
+                style={{marginRight:'15px', backgroundColor: showScanner ? '#c0392b' : '#27ae60'}}
+             >
+                <i className="fa-solid fa-camera"></i> {showScanner ? "Kapat" : "Tara"}
+             </button>
+             <span>Admin</span>
+             <i className="fa-solid fa-circle-user fa-xl"></i>
+          </div>
         </header>
 
         <div className="content-padding">
-          {/* İSTATİSTİKLER */}
+          
+          {/* --- BARKOD TARAYICI ALANI (GİZLE/GÖSTER) --- */}
+          {showScanner && (
+            <div style={{marginBottom: '20px', padding: '20px', background: 'white', borderRadius: '10px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)'}}>
+              <BarcodeScanner />
+            </div>
+          )}
+
+          {/* --- İSTATİSTİK KARTLARI --- */}
           <div className="stats-cards">
             <div className="stat-card">
               <div><h3>Toplam Çeşit</h3><p className="stat-num">{filteredProducts.length}</p></div>
@@ -117,7 +169,7 @@ function App() {
             </div>
           </div>
 
-          {/* --- FİLTRE VE ARAMA ALANI (YENİ) --- */}
+          {/* --- FİLTRE VE ARAMA ALANI --- */}
           <div className="filter-bar">
             <div className="search-box">
               <i className="fa-solid fa-magnifying-glass"></i>
@@ -141,9 +193,10 @@ function App() {
             </div>
           </div>
 
-          {/* ÜRÜN LİSTESİ */}
+          {/* --- ÜRÜN LİSTESİ (GRID YAPISI) --- */}
           <div className="product-grid">
             {filteredProducts.map((product) => {
+              // Stok durumuna göre renk sınıfı belirleme
               let stockClass = "stock-high";
               if (product.stock < 10) stockClass = "stock-low";
               else if (product.stock < 50) stockClass = "stock-medium";
@@ -173,6 +226,7 @@ function App() {
             })}
           </div>
           
+          {/* --- SONUÇ BULUNAMADI UYARISI --- */}
           {filteredProducts.length === 0 && (
             <div style={{textAlign: 'center', padding: '20px', color: '#777'}}>
               <i className="fa-solid fa-filter-circle-xmark fa-2x"></i>
