@@ -27,9 +27,7 @@ const BarcodeScanner: React.FC = () => {
           "Content-Type": "application/json",
         },
         // --- KRİTİK DÜZELTME: action eklendi ---
-       body: JSON.stringify({ 
-  barcode: decodedText, 
-  action: "scanBarcode" 
+       body: JSON.stringify({ barcode: decodedText, action: "scanBarcode" }) 
 }),
 
 
