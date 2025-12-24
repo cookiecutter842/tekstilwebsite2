@@ -29,7 +29,7 @@ const BarcodeScanner: React.FC = () => {
         // --- KRİTİK DÜZELTME: action eklendi ---
 body: JSON.stringify({ 
   barcode: decodedText, 
-  action: "scanBarcode" // Bu parametre Apps Script'teki stok düşme işlemini tetikler
+  action: "scanBarcode" 
 }),
 
       setStatusMessage("Başarıyla kaydedildi: " + decodedText);
