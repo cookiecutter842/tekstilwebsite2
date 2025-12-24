@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Scanner from './Scanner'; // Yeni oluşturduğumuz yüksek çözünürlüklü scanner
 
 // Apps Script Linkin (Buraya en son aldığın güncel Deploy URL'sini yapıştır!)
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx................/exec";
+const GOOGLE_SCRIPT_URL = https://script.google.com/home/projects/16h0HKPn0aM-kG_EgX0lqnm4IOnf5oyBK6MJSsZeHmA5pZ9eaTAKRIoiz/edit"";
 
 const BarcodeScanner: React.FC = () => {
   const [scanResult, setScanResult] = useState<string | null>(null);
